@@ -33,7 +33,11 @@ def check_leboncoin_once():
     print("🚀 Début de la vérification Leboncoin", file=sys.stderr)
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+            "Accept-Language": "fr-FR,fr;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Referer": "https://www.leboncoin.fr/",
+            "Connection": "keep-alive",
         }
         res = requests.get(URL, headers=headers)
         print(f"📡 Statut de la requête : {res.status_code}", file=sys.stderr)
