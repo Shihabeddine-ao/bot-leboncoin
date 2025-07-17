@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask
@@ -21,25 +22,25 @@ def send_telegram(message):
     try:
         r = requests.post(url, json=data)
         if r.status_code == 200:
-            print("📩 Message envoyé à Telegram.")
+            print("📩 Message envoyé à Telegram.", file=sys.stderr)
         else:
-            print(f"⚠️ Erreur envoi Telegram : {r.status_code}")
+            print(f"⚠️ Erreur envoi Telegram : {r.status_code}", file=sys.stderr)
     except Exception as e:
-        print(f"⚠️ Exception Telegram : {e}")
+        print(f"⚠️ Exception Telegram : {e}", file=sys.stderr)
 
 def check_leboncoin_once():
     global seen_links
-    print("🚀 Début de la vérification Leboncoin")
+    print("🚀 Début de la vérification Leboncoin", file=sys.stderr)
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         }
         res = requests.get(URL, headers=headers)
-        print(f"📡 Statut de la requête : {res.status_code}")
+        print(f"📡 Statut de la requête : {res.status_code}", file=sys.stderr)
         if res.status_code == 200:
             soup = BeautifulSoup(res.text, "html.parser")
             ads = soup.select("a[data-qa-id='aditem_container']")
-            print(f"🔗 Nombre de liens trouvés : {len(ads)}")
+            print(f"🔗 Nombre de liens trouvés : {len(ads)}", file=sys.stderr)
 
             new_ads = []
             for ad in ads:
@@ -52,13 +53,13 @@ def check_leboncoin_once():
                 for link in new_ads:
                     send_telegram(f"🚗 Nouvelle annonce : {link}")
             else:
-                print("ℹ️ Pas de nouvelle annonce cette fois.")
+                print("ℹ️ Pas de nouvelle annonce cette fois.", file=sys.stderr)
         else:
-            print(f"⚠️ Erreur requête Leboncoin : {res.status_code}")
+            print(f"⚠️ Erreur requête Leboncoin : {res.status_code}", file=sys.stderr)
     except Exception as e:
-        print(f"⚠️ Erreur scraping : {e}")
+        print(f"⚠️ Erreur scraping : {e}", file=sys.stderr)
 
-    print("✅ Fin de la vérification Leboncoin\n")
+    print("✅ Fin de la vérification Leboncoin\n", file=sys.stderr)
     return "✅ Vérification terminée."
 
 @app.route('/')
