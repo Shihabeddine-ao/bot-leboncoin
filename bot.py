@@ -1,11 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
 import time
+import os  # <-- Import nécessaire pour lire les variables d'environnement
 
 # CONFIGURATION
 URL = "https://www.leboncoin.fr/recherche?category=2&regions=22&fuel=1&price=0-2000&year=2010-&mileage=0-190000"
-TELEGRAM_BOT_TOKEN = "7673698272:AAHr2EPeTX7t24ZEAVhaoqYTS4y6gzRAgr4"
-TELEGRAM_CHAT_ID = "6768525534"
+
+# Récupération sécurisée des tokens depuis les variables d'environnement
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 seen_ads = set()
 
 def send_telegram_message(message):
