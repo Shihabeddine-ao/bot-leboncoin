@@ -5,9 +5,9 @@ from flask import Flask
 import threading
 import os
 
-print("🔄 Bot lancé...")  # Affichage au démarrage
+print("🔄 Bot lancé...")  # Message au démarrage
 
-# CONFIGURATION (valeurs à lire depuis les variables d’environnement)
+# CONFIGURATION
 URL = "https://www.leboncoin.fr/recherche?category=2&regions=22&fuel=1&price=0-2000&year=2010-&mileage=0-190000"
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -25,26 +25,16 @@ def send_telegram_message(message):
         print("Erreur envoi Telegram :", e)
 
 def check_new_ads():
-    headers = {"User-Agent": "Mozilla/5.0"}
-    try:
-        response = requests.get(URL, headers=headers)
-        soup = BeautifulSoup(response.text, "html.parser")
-        links = soup.find_all("a", href=True)
-
-        for link in links:
-            href = link['href']
-            if "/voitures/" in href and href not in seen_ads:
-                seen_ads.add(href)
-                full_link = "https://www.leboncoin.fr" + href
-                send_telegram_message(f"🚗 Nouvelle annonce repérée :\n{full_link}")
-                print("✅ Nouvelle annonce :", full_link)
-    except Exception as e:
-        print("Erreur analyse page :", e)
+    print("🔎 Vérification des annonces en cours...")
+    send_telegram_message("🚨 Test notification Telegram OK !")
+    print("✅ Notification de test envoyée.")
+    return  # Arrête ici pour tester uniquement la notif
 
 # Boucle dans un thread
 def start_bot_loop():
     while True:
         check_new_ads()
+        print("⏳ Pause de 5 minutes avant la prochaine vérification...")
         time.sleep(300)  # 5 minutes
 
 threading.Thread(target=start_bot_loop).start()
