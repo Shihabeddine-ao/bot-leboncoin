@@ -24,13 +24,16 @@ def send_telegram_message(message):
         print("Erreur envoi Telegram :", e)
 
 def check_new_ads():
-    print("🔎 Vérification des annonces en cours...")
+    print("🔎 Vérification des annonces en cours... début")
     headers = {"User-Agent": "Mozilla/5.0"}
     try:
+        print("📡 Envoi requête GET sur leboncoin...")
         response = requests.get(URL, headers=headers)
+        print(f"✅ Requête OK, status code : {response.status_code}")
+        
         soup = BeautifulSoup(response.text, "html.parser")
         links = soup.find_all("a", href=True)
-        print(f"Nombre de liens trouvés : {len(links)}")
+        print(f"🔗 Nombre de liens trouvés : {len(links)}")
 
         new_found = False
         for link in links:
@@ -45,6 +48,7 @@ def check_new_ads():
         if not new_found:
             print("ℹ️ Pas de nouvelle annonce cette fois.")
 
+        print("🔎 Vérification des annonces en cours... fin")
     except Exception as e:
         print("❌ Erreur analyse page :", e)
 
