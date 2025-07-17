@@ -69,9 +69,11 @@ def fetch_leboncoin_ads():
         return []
 
 def check_new_ads():
-    print("🔎 Vérification des annonces Leboncoin...")
+    print("🔎 Vérification des annonces en cours... début")
+    print("📡 Envoi requête POST sur l’API Leboncoin...")
+
     ads = fetch_leboncoin_ads()
-    print(f"🔗 {len(ads)} annonces récupérées.")
+    print(f"✅ Requête OK, annonces récupérées : {len(ads)}")
 
     new_ads = []
     for ad in ads:
@@ -81,21 +83,24 @@ def check_new_ads():
             seen_ads.add(ad_id)
 
     if not new_ads:
-        print("ℹ️ Pas de nouvelles annonces.")
-        return
+        print("ℹ️ Pas de nouvelle annonce cette fois.")
+    else:
+        for ad in new_ads:
+            title = ad.get("subject") or ad.get("title") or "Sans titre"
+            price = ad.get("price") or "Prix non indiqué"
+            url = f"https://www.leboncoin.fr/voitures/{ad.get('id')}.htm"
+            print(f"🚗 Nouvelle annonce : {title} - Prix : {price} €\n{url}")
+            send_telegram_message(f"🚗 Nouvelle annonce : {title}\nPrix : {price} €\n{url}")
 
-    for ad in new_ads:
-        title = ad.get("subject") or ad.get("title") or "Sans titre"
-        price = ad.get("price") or "Prix non indiqué"
-        url = f"https://www.leboncoin.fr/voitures/{ad.get('id')}.htm"
-        message = f"🚗 Nouvelle annonce : {title}\nPrix : {price} €\n{url}"
-        print(message)
-        send_telegram_message(message)
+    print("🔎 Vérification des annonces en cours... fin\n")
+
 
 def background_task():
     while True:
         check_new_ads()
+        print("⏳ Pause de 5 minutes avant la prochaine vérification...\n")
         time.sleep(300)  # 5 minutes
+
 
 @app.route("/")
 def home():
