@@ -26,9 +26,27 @@ def send_telegram_message(message):
 
 def check_new_ads():
     print("🔎 Vérification des annonces en cours...")
-    send_telegram_message("🚨 Test notification Telegram OK !")
-    print("✅ Notification de test envoyée.")
-    return  # Arrête ici pour tester uniquement la notif
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        response = requests.get(URL, headers=headers)
+        soup = BeautifulSoup(response.text, "html.parser")
+        links = soup.find_all("a", href=True)
+
+        new_found = False
+        for link in links:
+            href = link['href']
+            if "/voitures/" in href and href not in seen_ads:
+                seen_ads.add(href)
+                full_link = "https://www.leboncoin.fr" + href
+                send_telegram_message(f"🚗 Nouvelle annonce repérée :\n{full_link}")
+                print("✅ Nouvelle annonce :", full_link)
+                new_found = True
+
+        if not new_found:
+            print("ℹ️ Pas de nouvelle annonce cette fois.")
+
+    except Exception as e:
+        print("❌ Erreur analyse page :", e)
 
 # Boucle dans un thread
 def start_bot_loop():
