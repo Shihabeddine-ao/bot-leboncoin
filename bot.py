@@ -33,7 +33,7 @@ HEADERS = {
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
     print("❌ Erreur: TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID non définis.")
     exit(1)
 
