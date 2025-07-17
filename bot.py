@@ -5,9 +5,8 @@ from flask import Flask
 import threading
 import os
 
-print("🔄 Bot lancé...")  # Message au démarrage
+print("🔄 Bot lancé...")
 
-# CONFIGURATION
 URL = "https://www.leboncoin.fr/recherche?category=2&regions=22&fuel=1&price=0-2000&year=2010-&mileage=0-190000"
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -31,6 +30,7 @@ def check_new_ads():
         response = requests.get(URL, headers=headers)
         soup = BeautifulSoup(response.text, "html.parser")
         links = soup.find_all("a", href=True)
+        print(f"Nombre de liens trouvés : {len(links)}")
 
         new_found = False
         for link in links:
@@ -48,16 +48,19 @@ def check_new_ads():
     except Exception as e:
         print("❌ Erreur analyse page :", e)
 
-# Boucle dans un thread
 def start_bot_loop():
     while True:
-        check_new_ads()
+        try:
+            print("⏰ Début de la vérification...")
+            check_new_ads()
+            print("✔️ Vérification terminée.")
+        except Exception as e:
+            print("❌ Erreur dans la boucle principale :", e)
         print("⏳ Pause de 5 minutes avant la prochaine vérification...")
-        time.sleep(300)  # 5 minutes
+        time.sleep(300)
 
 threading.Thread(target=start_bot_loop).start()
 
-# Serveur Flask factice pour Render
 app = Flask(__name__)
 
 @app.route('/')
