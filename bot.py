@@ -26,7 +26,7 @@ def home():
     return "🤖 Bot Leboncoin en ligne."
 
 def send_telegram(message):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     data = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
     try:
         r = requests.post(url, json=data)
@@ -72,13 +72,12 @@ def check_leboncoin():
         print("⏳ Pause de 5 minutes avant la prochaine vérification...\n")
         time.sleep(300)
 
-# Thread de vérification
 def start_thread():
     t = threading.Thread(target=check_leboncoin)
     t.daemon = True
     t.start()
 
-start_thread()
-
+# Important : tout doit être dans ce bloc
 if __name__ == '__main__':
+    start_thread()
     app.run(host="0.0.0.0", port=10000)
