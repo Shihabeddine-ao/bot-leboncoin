@@ -1,85 +1,89 @@
-import os
-import sys
 import requests
-from bs4 import BeautifulSoup
-from flask import Flask
-from dotenv import load_dotenv
+import json
+import os
+import time
 
-load_dotenv()
-
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+# 📦 Variables d’environnement à configurer sur Fly.io
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-URL = "https://www.leboncoin.fr/recherche?category=2&price=1000-5000&fuel=diesel&kilometers=0-190000&year=2010-&critics=2"
+SEEN_FILE = "seen_ads.json"
 
-app = Flask(__name__)
+def load_seen_ads():
+    if os.path.exists(SEEN_FILE):
+        with open(SEEN_FILE, "r") as f:
+            return json.load(f)
+    return []
 
-seen_links = set()
+def save_seen_ads(seen_ads):
+    with open(SEEN_FILE, "w") as f:
+        json.dump(seen_ads, f)
 
-proxy_url = "http://51.158.123.35:8811"  # Proxy HTTP gratuit (attention à l'instabilité)
+def send_telegram_message(text):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    data = {"chat_id": TELEGRAM_CHAT_ID, "text": text}
+    response = requests.post(url, data=data)
+    if response.status_code != 200:
+        print("Erreur envoi Telegram:", response.text)
 
-proxies = {
-    "http": proxy_url,
-    "https": proxy_url,
-}
+def search_leboncoin():
+    url = "https://api.leboncoin.fr/finder/search"
+    payload = {
+        "filters": {
+            "category": {"id": "2"},  # Voitures
+            "location": {"zipcode": "69000", "radius": 50},
+            "price": {"min": 500, "max": 5000},
+            "enums": {
+                "regdate": ["2010"],
+                "critair": ["1", "2"]
+            },
+            "mileage": {"max": 190000},
+            "keywords": {"text": "voiture", "type": "all"}
+        },
+        "limit": 30,
+        "limit_alu": 0,
+        "offset": 0
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "LeboncoinBot/1.0"
+    }
 
-def send_telegram(message):
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    data = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
     try:
-        r = requests.post(url, json=data)
-        if r.status_code == 200:
-            print("📩 Message envoyé à Telegram.", file=sys.stderr)
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code == 200:
+            return response.json().get("ads", [])
         else:
-            print(f"⚠️ Erreur envoi Telegram : {r.status_code}", file=sys.stderr)
+            print("Erreur API Leboncoin:", response.status_code)
     except Exception as e:
-        print(f"⚠️ Exception Telegram : {e}", file=sys.stderr)
+        print("⚠️ Erreur de requête:", e)
+    return []
 
-def check_leboncoin_once():
-    global seen_links
-    print("🚀 Début de la vérification Leboncoin", file=sys.stderr)
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-            "Accept-Language": "fr-FR,fr;q=0.9",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Referer": "https://www.leboncoin.fr/",
-            "Connection": "keep-alive",
-        }
-        res = requests.get(URL, headers=headers, proxies=proxies, timeout=10)
-        print(f"📡 Statut de la requête : {res.status_code}", file=sys.stderr)
-        if res.status_code == 200:
-            soup = BeautifulSoup(res.text, "html.parser")
-            ads = soup.select("a[data-qa-id='aditem_container']")
-            print(f"🔗 Nombre de liens trouvés : {len(ads)}", file=sys.stderr)
+def main_loop():
+    print("🚗 Démarrage du bot Leboncoin...")
+    seen_ads = load_seen_ads()
 
-            new_ads = []
-            for ad in ads:
-                link = "https://www.leboncoin.fr" + ad["href"]
-                if link not in seen_links:
-                    seen_links.add(link)
-                    new_ads.append(link)
+    while True:
+        try:
+            ads = search_leboncoin()
+            new_ads = [ad for ad in ads if ad["id"] not in seen_ads]
+
+            for ad in new_ads:
+                title = ad.get("subject", "Annonce")
+                price = ad.get("price", 0)
+                link = f"https://www.leboncoin.fr/vi/{ad['id']}.htm"
+                message = f"🚘 {title} - {price} €\n{link}"
+                send_telegram_message(message)
+                print("🔔 Nouvelle annonce envoyée :", title)
+                seen_ads.append(ad["id"])
 
             if new_ads:
-                for link in new_ads:
-                    send_telegram(f"🚗 Nouvelle annonce : {link}")
-            else:
-                print("ℹ️ Pas de nouvelle annonce cette fois.", file=sys.stderr)
-        else:
-            print(f"⚠️ Erreur requête Leboncoin : {res.status_code}", file=sys.stderr)
-    except Exception as e:
-        print(f"⚠️ Erreur scraping : {e}", file=sys.stderr)
+                save_seen_ads(seen_ads)
 
-    print("✅ Fin de la vérification Leboncoin\n", file=sys.stderr)
-    return "✅ Vérification terminée."
+            time.sleep(180)  # 3 minutes
+        except Exception as e:
+            print("❌ Erreur dans la boucle :", e)
+            time.sleep(60)
 
-@app.route('/')
-def home():
-    return "🤖 Bot Leboncoin en ligne."
-
-@app.route('/check')
-def check():
-    return check_leboncoin_once()
-
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=10000)
+if __name__ == "__main__":
+    main_loop()
