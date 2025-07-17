@@ -29,12 +29,13 @@ def send_telegram(message):
 
 def check_leboncoin_once():
     global seen_links
-    print("🔎 Vérification des annonces en cours... début")
+    print("🚀 Début de la vérification Leboncoin")
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         }
         res = requests.get(URL, headers=headers)
+        print(f"📡 Statut de la requête : {res.status_code}")
         if res.status_code == 200:
             soup = BeautifulSoup(res.text, "html.parser")
             ads = soup.select("a[data-qa-id='aditem_container']")
@@ -57,7 +58,7 @@ def check_leboncoin_once():
     except Exception as e:
         print(f"⚠️ Erreur scraping : {e}")
 
-    print("🔎 Vérification des annonces en cours... fin\n")
+    print("✅ Fin de la vérification Leboncoin\n")
     return "✅ Vérification terminée."
 
 @app.route('/')
