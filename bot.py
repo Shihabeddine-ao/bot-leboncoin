@@ -49,15 +49,17 @@ def check_new_ads():
         print("❌ Erreur analyse page :", e)
 
 def start_bot_loop():
+    count = 0
     while True:
         try:
-            print("⏰ Début de la vérification...")
+            count += 1
+            print(f"⏰ Début de la vérification #{count} ...")
             check_new_ads()
-            print("✔️ Vérification terminée.")
+            print(f"✔️ Vérification #{count} terminée.")
         except Exception as e:
             print("❌ Erreur dans la boucle principale :", e)
-        print("⏳ Pause de 5 minutes avant la prochaine vérification...")
-        time.sleep(300)
+        print("⏳ Pause de 1 minute avant la prochaine vérification...")
+        time.sleep(60)  # 1 minute pour test rapide
 
 threading.Thread(target=start_bot_loop).start()
 
