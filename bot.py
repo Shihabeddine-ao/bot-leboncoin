@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Infos Telegram
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # URL Leboncoin (ex. filtrée avec tes critères)
