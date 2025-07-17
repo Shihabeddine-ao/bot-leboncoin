@@ -16,6 +16,13 @@ app = Flask(__name__)
 
 seen_links = set()
 
+proxy_url = "http://51.158.123.35:8811"  # Proxy HTTP gratuit (attention à l'instabilité)
+
+proxies = {
+    "http": proxy_url,
+    "https": proxy_url,
+}
+
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     data = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
@@ -39,7 +46,7 @@ def check_leboncoin_once():
             "Referer": "https://www.leboncoin.fr/",
             "Connection": "keep-alive",
         }
-        res = requests.get(URL, headers=headers)
+        res = requests.get(URL, headers=headers, proxies=proxies, timeout=10)
         print(f"📡 Statut de la requête : {res.status_code}", file=sys.stderr)
         if res.status_code == 200:
             soup = BeautifulSoup(res.text, "html.parser")
