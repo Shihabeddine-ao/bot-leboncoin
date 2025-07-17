@@ -27,7 +27,11 @@ HEADERS = {
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/114.0.0.0 Safari/537.36",
     "Content-Type": "application/json",
+    "Accept": "application/json",
+    "Origin": "https://www.leboncoin.fr",
+    "Referer": "https://www.leboncoin.fr/",
 }
+
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
