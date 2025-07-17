@@ -1,26 +1,21 @@
-import requests
-import time
-import threading
-from flask import Flask
 import os
+import time
+import requests
+from flask import Flask
+from threading import Thread
 
-print("🔄 Bot lancé...")
+app = Flask(__name__)
 
-# Variables d'environnement (à définir sur Render)
+# === CONFIG ===
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-seen_ads = set()
+INTERVAL = 300  # 5 minutes
+SEEN_ADS = set()
 
-def send_telegram_message(message):
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("❌ Token ou Chat ID manquant.")
-        return
+def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
-    try:
-        requests.post(url, data=payload)
-    except Exception as e:
-        print("❌ Erreur envoi Telegram :", e)
+    data = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
+    requests.post(url, data=data)
 
 def fetch_ads():
     url = "https://api.leboncoin.fr/finder/search"
@@ -48,58 +43,46 @@ def fetch_ads():
         "Content-Type": "application/json",
         "User-Agent": "LeboncoinBot/1.0"
     }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code == 200:
-            return response.json().get("ads", [])
-        else:
-            print(f"⚠️ Erreur lors de la requête : {response.status_code}")
-            return []
-    except Exception as e:
-        print("❌ Erreur lors de l'appel API Leboncoin :", e)
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        return response.json().get("ads", [])
+    else:
+        print(f"⚠️ Erreur lors de la requête : {response.status_code}")
         return []
 
 def check_new_ads():
-    print("🔎 Vérification des annonces en cours...")
+    print("🔎 Vérification des annonces en cours... début")
     ads = fetch_ads()
     print(f"🔗 Annonces récupérées : {len(ads)}")
-
-    new_found = False
+    new_count = 0
     for ad in ads:
-        ad_id = ad.get("id")
-        url = f"https://www.leboncoin.fr/voitures/{ad_id}.htm"
-        if ad_id and ad_id not in seen_ads:
-            seen_ads.add(ad_id)
-            message = f"🚗 Nouvelle annonce détectée !\n{url}"
-            send_telegram_message(message)
-            print("✅ Nouvelle annonce :", url)
-            new_found = True
-
-    if not new_found:
+        ad_id = ad.get("list_id")
+        if ad_id not in SEEN_ADS:
+            SEEN_ADS.add(ad_id)
+            title = ad.get("subject")
+            price = ad.get("price")
+            url = f"https://www.leboncoin.fr/vi/{ad_id}.htm"
+            city = ad.get("location", {}).get("city", "N/A")
+            message = f"🚗 Nouvelle annonce : {title}\n📍 {city}\n💰 {price} €\n🔗 {url}"
+            send_telegram(message)
+            print(f"✅ Nouvelle annonce envoyée : {title}")
+            new_count += 1
+    if new_count == 0:
         print("ℹ️ Pas de nouvelle annonce cette fois.")
+    print("🔎 Vérification des annonces en cours... fin\n")
 
-def start_bot_loop():
-    count = 0
+def start_bot():
+    print("🔄 Bot lancé...")
     while True:
-        try:
-            count += 1
-            print(f"\n⏰ Début vérification #{count}")
-            check_new_ads()
-            print(f"✔️ Vérification #{count} terminée.")
-        except Exception as e:
-            print("❌ Erreur dans la boucle :", e)
-        print("⏳ Pause de 5 minutes...\n")
-        time.sleep(300)
+        check_new_ads()
+        print(f"⏳ Pause de {INTERVAL // 60} minutes...\n")
+        time.sleep(INTERVAL)
 
-# Lancer la vérification en thread
-threading.Thread(target=start_bot_loop).start()
-
-# Flask pour l'hébergement web sur Render
-app = Flask(__name__)
-
-@app.route('/')
+@app.route("/")
 def home():
-    return "✅ Bot Leboncoin avec API en ligne et opérationnel."
+    return "Bot Leboncoin actif."
 
-app.run(host='0.0.0.0', port=10000)
+# Lancer le bot dans un thread pour ne pas bloquer Flask
+if __name__ == "__main__":
+    Thread(target=start_bot, daemon=True).start()
+    app.run(host="0.0.0.0", port=10000)
