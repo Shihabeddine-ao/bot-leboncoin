@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import time
 import os  # <-- Import nécessaire pour lire les variables d'environnement
 
+print("🔄 Bot lancé...")  # ✅ Ce message s'affichera dans les logs Render
+
 # CONFIGURATION
 URL = "https://www.leboncoin.fr/recherche?category=2&regions=22&fuel=1&price=0-2000&year=2010-&mileage=0-190000"
 
