@@ -13,6 +13,8 @@ URL = "https://www.leboncoin.fr/recherche?category=2&price=1000-5000&fuel=diesel
 
 app = Flask(__name__)
 
+seen_links = set()
+
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     data = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
@@ -24,8 +26,6 @@ def send_telegram(message):
             print(f"⚠️ Erreur envoi Telegram : {r.status_code}")
     except Exception as e:
         print(f"⚠️ Exception Telegram : {e}")
-
-seen_links = set()
 
 def check_leboncoin_once():
     global seen_links
